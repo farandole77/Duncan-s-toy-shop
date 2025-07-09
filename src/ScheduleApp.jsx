@@ -246,11 +246,11 @@ export default function ScheduleApp() {
               />
             </div>
             <div className="flex justify-center gap-2 w-full max-w-sm mb-2">
-              <button onClick={handleLogin} className="w-1/2 py-2 rounded-lg shadow">
-                <img src="/login_btn.PNG" alt="로그인" className="mx-auto w-1/2" />
+              <button onClick={handleLogin} className="w-1 py-2 rounded-lg shadow">
+                <img src="/login_btn.PNG" alt="로그인" className="mx-auto w-1" />
               </button>
-              <button onClick={handleSignup} className="w-1/2 py-2 rounded-lg shadow">
-                <img src="/signup_btn.PNG" alt="회원가입" className="mx-auto w-1/2" />
+              <button onClick={handleSignup} className="w-1 py-2 rounded-lg shadow">
+                <img src="/signup_btn.PNG" alt="회원가입" className="mx-auto w-1" />
               </button>
             </div>
           </div>
