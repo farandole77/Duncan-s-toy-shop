@@ -59,8 +59,8 @@ function ScheduleTable({
   canEdit = true,
 }) {
   return (
-    <div className="bg-white/80 backdrop-blur rounded-2xl p-4 shadow-md w-full max-w-full overflow-x-auto mt-6">
-      <h2 className="text-lg font-semibold mb-4 text-gray-900 border-b pb-2 border-gray-300">{title} - {displayDate}</h2>
+    <div className="bg-[#5b3a29]/80 backdrop-blur rounded-2xl p-4 shadow-md w-full max-w-full overflow-x-auto mt-6 text-white">
+      <h2 className="text-lg font-semibold mb-4 text-white border-b pb-2 border-gray-300/50">{title} - {displayDate}</h2>
       <table className="min-w-full w-full border text-sm text-center bg-gray-100">
         <thead>
           <tr>
@@ -119,7 +119,6 @@ export default function ScheduleApp() {
   const [password, setPassword] = useState('');
   const [currentUser, setCurrentUser] = useState(null);
   const [selected, setSelected] = useState({});
-  const [original, setOriginal] = useState({});
   const [allSchedules, setAllSchedules] = useState({});
   const [dateOffset, setDateOffset] = useState(1);
   const [page, setPage] = useState('abyss');
@@ -142,7 +141,7 @@ export default function ScheduleApp() {
         setCurrentUser(user);
         const saved = await getDoc(doc(db, 'schedules', user.uid));
         const savedData = saved.exists() ? saved.data().data : {};
-        setOriginal(savedData);
+        setSelected(savedData);
       } else {
         setCurrentUser(null);
         setSelected({});
@@ -186,14 +185,12 @@ export default function ScheduleApp() {
         data: selected,
       });
       alert('저장되었습니다.');
+      window.location.reload();
     } catch (error) {
       alert('저장 실패: ' + error.message);
     }
   };
 
-  const restoreOriginal = () => {
-    setSelected(original);
-  };
 
   const loadAllSchedules = async () => {
     const querySnapshot = await getDocs(collection(db, 'schedules'));
@@ -223,7 +220,11 @@ export default function ScheduleApp() {
               backgroundSize: 'cover',
               backgroundPosition: 'center',
             }
-          : { backgroundColor: '#e5e7eb' }
+          : {
+              backgroundImage: "url('/duncans-toyshop-innerbg.jpg')",
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }
       }
     >
 
@@ -233,24 +234,24 @@ export default function ScheduleApp() {
               <input
                 type="text"
                 placeholder="ID"
-                className="w-full border rounded-lg px-3 py-2 mb-2 bg-white/10 text-gray-900 placeholder-gray-500 shadow-inner focus:outline-none"
+                className="w-full border rounded-lg px-3 py-2 mb-2 bg-white/10 text-white placeholder-white/70 shadow-inner focus:outline-none"
                 value={userId}
                 onChange={(e) => setUserId(e.target.value)}
               />
               <input
                 type="password"
                 placeholder="Password"
-                className="w-full border rounded-lg px-3 py-2 mb-2 bg-white/10 text-gray-900 placeholder-gray-500 shadow-inner focus:outline-none"
+                className="w-full border rounded-lg px-3 py-2 mb-2 bg-white/10 text-white placeholder-white/70 shadow-inner focus:outline-none"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
             <div className="flex justify-center gap-2 w-full max-w-sm mb-2">
-              <button onClick={handleLogin} className="w-1/2 py-2 rounded-lg shadow">
-                <img src="/login_btn.PNG" alt="로그인" className="mx-auto w-full" />
-              </button>
               <button onClick={handleSignup} className="w-1/2 py-2 rounded-lg shadow">
-                <img src="/signup_btn.PNG" alt="회원가입" className="mx-auto w-full" />
+                <img src="/signup_btn.PNG" alt="회원가입" className="mx-auto w-1/2" />
+              </button>
+              <button onClick={handleLogin} className="w-1/2 py-2 rounded-lg shadow">
+                <img src="/login_btn.PNG" alt="로그인" className="mx-auto w-1/2" />
               </button>
             </div>
           </div>
@@ -292,19 +293,19 @@ export default function ScheduleApp() {
                 onClick={() => setDateOffset(dateOffset - 1)}
                 className="px-3 py-1 bg-gray-200 text-gray-900 rounded-full"
               >
-                ◀
+                <img src="/left_arrow.png" alt="이전" className="w-6 h-6" />
               </button>
               <button
                 onClick={() => setDateOffset(1)}
                 className="px-4 py-1 bg-gray-200 text-gray-900 rounded-full"
               >
-                Today
+                <img src="/today.png" alt="오늘" className="h-6" />
               </button>
               <button
                 onClick={() => setDateOffset(dateOffset + 1)}
                 className="px-3 py-1 bg-gray-200 text-gray-900 rounded-full"
               >
-                ▶
+                <img src="/right_arrow.png" alt="다음" className="w-6 h-6" />
               </button>
             </div>
 
@@ -337,18 +338,12 @@ export default function ScheduleApp() {
               />
             )}
 
-            <div className="mt-4 flex gap-2">
+            <div className="mt-4 flex">
               <button
-                className="w-1/2 py-3 rounded-lg bg-green-500 text-white font-semibold shadow"
+                className="w-full py-3 rounded-lg bg-green-500 text-white font-semibold shadow"
                 onClick={handleSubmit}
               >
                 저장
-              </button>
-              <button
-                className="w-1/2 py-3 rounded-lg bg-yellow-500 text-white font-semibold shadow"
-                onClick={restoreOriginal}
-              >
-                수정
               </button>
             </div>
 
