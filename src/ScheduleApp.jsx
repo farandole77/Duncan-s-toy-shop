@@ -215,7 +215,7 @@ export default function ScheduleApp() {
 
   return (
     <div
-      className="min-h-screen py-8 px-4 text-gray-900"
+      className="min-h-screen flex flex-col py-8 px-4 text-gray-900"
       style={
         !currentUser
           ? {
@@ -228,8 +228,8 @@ export default function ScheduleApp() {
     >
 
         {!currentUser ? (
-          <div className="max-w-sm mx-auto relative min-h-40 mb-6">
-            <div className="mb-4">
+          <div className="flex flex-col flex-grow justify-end items-center w-full">
+            <div className="w-full max-w-sm mb-4">
               <input
                 type="text"
                 placeholder="ID"
@@ -245,7 +245,7 @@ export default function ScheduleApp() {
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
-            <div className="absolute bottom-0 left-0 right-0 flex justify-center gap-2">
+            <div className="flex justify-center gap-2 w-full max-w-sm mb-2">
               <button onClick={handleLogin} className="w-1/2 py-2 rounded-lg shadow">
                 <img src="/login_btn.PNG" alt="로그인" className="mx-auto w-1/2" />
               </button>
