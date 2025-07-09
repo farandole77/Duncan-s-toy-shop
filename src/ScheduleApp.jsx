@@ -216,12 +216,12 @@ export default function ScheduleApp() {
       style={
         !currentUser
           ? {
-              backgroundImage: "url('/duncans-toyshop-bg.jpg')",
+              backgroundImage: `url(${process.env.PUBLIC_URL}/duncans-toyshop-bg.jpg)`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
             }
           : {
-              backgroundImage: "url('/duncans-toyshop-innerbg.jpg')",
+              backgroundImage: `url(${process.env.PUBLIC_URL}/duncans-toyshop-innerbg.jpg)`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
             }
@@ -268,44 +268,23 @@ export default function ScheduleApp() {
             </div>
 
             <div className="flex justify-center gap-4 mb-4">
-              <button
-                onClick={() => setPage('abyss')}
-                className={clsx(
-                  'w-24 h-10 rounded-full font-semibold',
-                  page === 'abyss' ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-900'
-                )}
-              >
-                어비스
+              <button onClick={() => setPage('abyss')} className="focus:outline-none">
+                <img src="/abyss.png" alt="어비스" className="w-24" />
               </button>
-              <button
-                onClick={() => setPage('raid')}
-                className={clsx(
-                  'w-24 h-10 rounded-full font-semibold',
-                  page === 'raid' ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-900'
-                )}
-              >
-                레이드
+              <button onClick={() => setPage('raid')} className="focus:outline-none">
+                <img src="/raid.png" alt="레이드" className="w-24" />
               </button>
             </div>
 
             <div className="flex justify-center gap-2 mb-4">
-              <button
-                onClick={() => setDateOffset(dateOffset - 1)}
-                className="px-3 py-1 bg-gray-200 text-gray-900 rounded-full"
-              >
-                <img src="/left_arrow.png" alt="이전" className="w-6 h-6" />
+              <button onClick={() => setDateOffset(dateOffset - 1)} className="focus:outline-none">
+                <img src="/left_arrow.png" alt="이전" className="w-12 h-12" />
               </button>
-              <button
-                onClick={() => setDateOffset(1)}
-                className="px-4 py-1 bg-gray-200 text-gray-900 rounded-full"
-              >
-                <img src="/today.png" alt="오늘" className="h-6" />
+              <button onClick={() => setDateOffset(1)} className="focus:outline-none">
+                <img src="/today.png" alt="오늘" className="w-12 h-12" />
               </button>
-              <button
-                onClick={() => setDateOffset(dateOffset + 1)}
-                className="px-3 py-1 bg-gray-200 text-gray-900 rounded-full"
-              >
-                <img src="/right_arrow.png" alt="다음" className="w-6 h-6" />
+              <button onClick={() => setDateOffset(dateOffset + 1)} className="focus:outline-none">
+                <img src="/right_arrow.png" alt="다음" className="w-12 h-12" />
               </button>
             </div>
 
@@ -338,12 +317,9 @@ export default function ScheduleApp() {
               />
             )}
 
-            <div className="mt-4 flex">
-              <button
-                className="w-full py-3 rounded-lg bg-green-500 text-white font-semibold shadow"
-                onClick={handleSubmit}
-              >
-                저장
+            <div className="mt-4 flex justify-center">
+              <button onClick={handleSubmit} className="focus:outline-none">
+                <img src="/save.png" alt="저장" className="h-10" />
               </button>
             </div>
 
