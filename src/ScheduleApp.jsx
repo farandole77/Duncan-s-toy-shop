@@ -13,6 +13,7 @@ import {
   setDoc,
   getDoc,
   getDocs,
+  deleteDoc,
   doc,
   collection
 } from 'firebase/firestore';
@@ -38,61 +39,7 @@ function getDateLabel(offset = 1) {
 }
 
 // Firestore 키에 안전하게 사용할 날짜 포맷
-function getDateKey(offset = 1) {
-  const d = new Date();
-  d.setDate(d.getDate() + offset);
-  const m = `${d.getMonth() + 1}`.padStart(2, '0');
-  const day = `${d.getDate()}`.padStart(2, '0');
-  return `${d.getFullYear()}-${m}-${day}`;
-}
-
-function ScheduleTable({
-  title,
-  selected,
-  toggleSlot,
-  displayDate,
-  dateKey = displayDate,
-  times,
-  stages,
-  allSchedules,
-  readonly = false,
-  canEdit = true,
-}) {
-  return (
-    <div className="bg-white/80 backdrop-blur rounded-2xl p-4 shadow-md w-full max-w-full overflow-x-auto mt-6">
-      <h2 className="text-lg font-semibold mb-4 text-gray-900 border-b pb-2 border-gray-300">{title} - {displayDate}</h2>
-      <table className="min-w-full w-full border text-sm text-center bg-gray-100">
-        <thead>
-          <tr>
-            <th className="border p-2 bg-gray-200 text-gray-900">시간/스테이지</th>
-            {stages.map((stage) => (
-              <th key={stage} className="border p-2 bg-gray-200 text-gray-900">{stage}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {times.map((time) => (
-            <tr key={time}>
-              <td className="border p-2 font-medium bg-gray-100 text-gray-800">{time}</td>
-              {stages.map((stage) => {
-                const key = `${dateKey}-${time}-${stage}`;
-                const isSelected = selected[key];
-                const users = allSchedules[key] || [];
-                return (
-                  <td
-                    key={key}
-                    className={clsx(
-                      'border p-2 text-center align-top h-20 overflow-y-auto transition duration-200',
-                      isSelected ? 'bg-rose-700 text-white' : 'hover:bg-gray-100 text-gray-900',
-                      readonly ? 'cursor-default' : 'cursor-pointer'
-                    )}
-                    onClick={() => {
-                      if (!readonly && canEdit) {
-                        toggleSlot(time, stage);
-                      } else if (!readonly && !canEdit) {
-                        alert('선택은 오늘까지 가능합니다.');
-                      }
-                    }}
+@@ -96,143 +97,185 @@ function ScheduleTable({
                   >
                     {readonly ? (
                       <div className="text-xs text-gray-700 text-left space-y-1">
@@ -118,11 +65,15 @@ export default function ScheduleApp() {
   const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
   const [currentUser, setCurrentUser] = useState(null);
-  const [selected, setSelected] = useState({});
-  const [original, setOriginal] = useState({});
-  const [allSchedules, setAllSchedules] = useState({});
+  const [selectedAbyss, setSelectedAbyss] = useState({});
+  const [selectedRaid, setSelectedRaid] = useState({});
+  const [originalAbyss, setOriginalAbyss] = useState({});
+  const [originalRaid, setOriginalRaid] = useState({});
+  const [allAbyss, setAllAbyss] = useState({});
+  const [allRaid, setAllRaid] = useState({});
+  const [userList, setUserList] = useState({});
   const [dateOffset, setDateOffset] = useState(1);
-  const [page, setPage] = useState('abyss');
+  const [page, setPage] = useState(() => localStorage.getItem('lastPage') || 'abyss');
 
   const times = ['오전', '오후', '저녁'];
   const abyssStages = ['입문~매어', '지옥1', '지옥2', '지옥3'];
@@ -141,11 +92,16 @@ export default function ScheduleApp() {
       if (user) {
         setCurrentUser(user);
         const saved = await getDoc(doc(db, 'schedules', user.uid));
-        const savedData = saved.exists() ? saved.data().data : {};
-        setOriginal(savedData);
+        const data = saved.exists() ? saved.data() : {};
+        setOriginalAbyss(data.abyss || {});
+        setOriginalRaid(data.raid || {});
+        setSelectedAbyss(data.abyss || {});
+        setSelectedRaid(data.raid || {});
+        setUserId(data.id || user.email.split('@')[0]);
       } else {
         setCurrentUser(null);
-        setSelected({});
+        setSelectedAbyss({});
+        setSelectedRaid({});
       }
     });
     loadAllSchedules();
@@ -154,7 +110,11 @@ export default function ScheduleApp() {
 
   const toggleSlot = (time, stage) => {
     const key = `${getDateKey(dateOffset)}-${time}-${stage}`;
-    setSelected((prev) => ({ ...prev, [key]: !prev[key] }));
+    if (page === 'abyss') {
+      setSelectedAbyss((prev) => ({ ...prev, [key]: !prev[key] }));
+    } else {
+      setSelectedRaid((prev) => ({ ...prev, [key]: !prev[key] }));
+    }
   };
 
   const handleSignup = async () => {
@@ -183,34 +143,63 @@ export default function ScheduleApp() {
     try {
       await setDoc(doc(db, 'schedules', currentUser.uid), {
         id: userId,
-        data: selected,
+        abyss: selectedAbyss,
+        raid: selectedRaid,
       });
-      alert('저장되었습니다.');
+      localStorage.setItem('lastPage', page);
+      alert('저장 되었습니다.');
+      window.location.reload();
     } catch (error) {
       alert('저장 실패: ' + error.message);
     }
   };
 
   const restoreOriginal = () => {
-    setSelected(original);
+    setSelectedAbyss(originalAbyss);
+    setSelectedRaid(originalRaid);
   };
 
   const loadAllSchedules = async () => {
     const querySnapshot = await getDocs(collection(db, 'schedules'));
-    const merged = {};
+    const mergedAbyss = {};
+    const mergedRaid = {};
+    const users = {};
     querySnapshot.forEach((docSnap) => {
       const name = docSnap.data().id || docSnap.id.split('@')[0];
-      const userData = docSnap.data().data || {};
-      Object.keys(userData).forEach((key) => {
-        if (userData[key]) {
-          merged[key] = merged[key] || [];
-          if (!merged[key].includes(name)) {
-            merged[key].push(name);
+      users[docSnap.id] = name;
+      const abyssData = docSnap.data().abyss || {};
+      Object.keys(abyssData).forEach((key) => {
+        if (abyssData[key]) {
+          mergedAbyss[key] = mergedAbyss[key] || [];
+          if (!mergedAbyss[key].includes(name)) {
+            mergedAbyss[key].push(name);
+          }
+        }
+      });
+      const raidData = docSnap.data().raid || {};
+      Object.keys(raidData).forEach((key) => {
+        if (raidData[key]) {
+          mergedRaid[key] = mergedRaid[key] || [];
+          if (!mergedRaid[key].includes(name)) {
+            mergedRaid[key].push(name);
           }
         }
       });
     });
-    setAllSchedules(merged);
+    setUserList(users);
+    setAllAbyss(mergedAbyss);
+    setAllRaid(mergedRaid);
+  };
+
+  const handleDeleteUser = async (uid) => {
+    if (!window.confirm('정말로 삭제하시겠습니까?')) return;
+    try {
+      await deleteDoc(doc(db, 'schedules', uid));
+      alert('삭제되었습니다.');
+      loadAllSchedules();
+    } catch (error) {
+      alert('삭제 실패: ' + error.message);
+    }
   };
 
   return (
@@ -236,67 +225,7 @@ export default function ScheduleApp() {
 
         {!currentUser ? (
           <div className="max-w-sm mx-auto mb-6">
-            <input
-              type="text"
-              placeholder="ID"
-              className="w-full border rounded-lg px-3 py-2 mb-2 bg-white/70 text-gray-900 placeholder-gray-500 shadow-inner focus:outline-none"
-              value={userId}
-              onChange={(e) => setUserId(e.target.value)}
-            />
-            <input
-              type="password"
-              placeholder="Password"
-              className="w-full border rounded-lg px-3 py-2 mb-2 bg-white/70 text-gray-900 placeholder-gray-500 shadow-inner focus:outline-none"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-            <div className="flex gap-2">
-              <button
-                onClick={handleSignup}
-                className="w-1/2 py-2 rounded-lg bg-pink-500 text-white font-semibold shadow"
-              >
-                회원가입
-              </button>
-              <button
-                onClick={handleLogin}
-                className="w-1/2 py-2 rounded-lg bg-blue-500 text-white font-semibold shadow"
-              >
-                로그인
-              </button>
-            </div>
-          </div>
-        ) : (
-          <>
-            <div className="flex justify-between items-center mb-4">
-              <div className="text-sm">👤 {currentUser.email}</div>
-              <button
-                onClick={handleLogout}
-                className="text-sm text-blue-600 hover:underline"
-              >
-                로그아웃
-              </button>
-            </div>
-
-            <div className="flex justify-center gap-4 mb-4">
-              <button
-                onClick={() => setPage('abyss')}
-                className={clsx(
-                  'w-24 h-10 rounded-full font-semibold',
-                  page === 'abyss' ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-900'
-                )}
-              >
-                어비스
-              </button>
-              <button
-                onClick={() => setPage('raid')}
-                className={clsx(
-                  'w-24 h-10 rounded-full font-semibold',
-                  page === 'raid' ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-900'
-                )}
-              >
-                레이드
-              </button>
-            </div>
+@@ -300,98 +343,117 @@ export default function ScheduleApp() {
 
             <div className="flex justify-center gap-2 mb-4">
               <button
@@ -322,7 +251,7 @@ export default function ScheduleApp() {
             {page === 'abyss' && (
               <ScheduleTable
                 title="어비스 일정 등록"
-                selected={selected}
+                selected={selectedAbyss}
                 toggleSlot={toggleSlot}
                 displayDate={dateLabel}
                 dateKey={dateKey}
@@ -336,7 +265,7 @@ export default function ScheduleApp() {
             {page === 'raid' && (
               <ScheduleTable
                 title="레이드 일정 등록"
-                selected={selected}
+                selected={selectedRaid}
                 toggleSlot={toggleSlot}
                 displayDate={dateLabel}
                 dateKey={dateKey}
@@ -372,7 +301,7 @@ export default function ScheduleApp() {
                 dateKey={dateKey}
                 times={times}
                 stages={abyssStages}
-                allSchedules={allSchedules}
+                allSchedules={allAbyss}
                 readonly={true}
               />
             )}
@@ -385,9 +314,28 @@ export default function ScheduleApp() {
                 dateKey={dateKey}
                 times={times}
                 stages={raidStages}
-                allSchedules={allSchedules}
+                allSchedules={allRaid}
                 readonly={true}
               />
+            )}
+
+            {userId === 'admin' && (
+              <div className="mt-8">
+                <h2 className="text-lg font-semibold mb-2">관리자 기능</h2>
+                <ul className="space-y-2">
+                  {Object.entries(userList).map(([uid, name]) => (
+                    <li key={uid} className="flex justify-between items-center">
+                      <span>{name}</span>
+                      <button
+                        onClick={() => handleDeleteUser(uid)}
+                        className="text-sm text-red-600 hover:underline"
+                      >
+                        회원 탈퇴
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
           </>
         )}
