@@ -22,6 +22,15 @@ npm start
 
 This will launch the app in development mode.
 
+## Running tests
+
+The repository does not contain any tests yet, but the test runner is configured
+to exit successfully even when no tests are present:
+
+```bash
+npm test -- --watchAll=false
+```
+
 ## Firebase credentials
 
 To connect to Firebase, provide your own Firebase configuration in `src/firebase.js`. Replace the existing keys with your Firebase project's credentials or set them in environment variables if you prefer to keep them out of the repository.
