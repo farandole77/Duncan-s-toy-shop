@@ -61,19 +61,19 @@ function ScheduleTable({
   return (
     <div className="bg-[#5b3a29]/80 backdrop-blur rounded-2xl p-4 shadow-md w-full max-w-full overflow-x-auto mt-6 text-white">
       <h2 className="text-lg font-semibold mb-4 text-white border-b pb-2 border-gray-300/50">{title} - {displayDate}</h2>
-      <table className="min-w-full w-full border text-sm text-center bg-gray-100">
+      <table className="min-w-full w-full border text-sm text-center bg-[#5b3a29]/30">
         <thead>
           <tr>
-            <th className="border p-2 bg-gray-200 text-gray-900">시간/스테이지</th>
+            <th className="border p-2 bg-[#5b3a29]/60 text-white">시간/스테이지</th>
             {stages.map((stage) => (
-              <th key={stage} className="border p-2 bg-gray-200 text-gray-900">{stage}</th>
+              <th key={stage} className="border p-2 bg-[#5b3a29]/60 text-white">{stage}</th>
             ))}
           </tr>
         </thead>
         <tbody>
           {times.map((time) => (
             <tr key={time}>
-              <td className="border p-2 font-medium bg-gray-100 text-gray-800">{time}</td>
+              <td className="border p-2 font-medium bg-[#5b3a29]/40 text-white">{time}</td>
               {stages.map((stage) => {
                 const key = `${dateKey}-${time}-${stage}`;
                 const isSelected = selected[key];
@@ -83,7 +83,7 @@ function ScheduleTable({
                     key={key}
                     className={clsx(
                       'border p-2 text-center align-top h-20 overflow-y-auto transition duration-200',
-                      isSelected ? 'bg-rose-700 text-white' : 'hover:bg-gray-100 text-gray-900',
+                      isSelected ? 'bg-rose-700 text-white' : 'hover:bg-[#5b3a29]/30 text-white',
                       readonly ? 'cursor-default' : 'cursor-pointer'
                     )}
                     onClick={() => {
@@ -95,7 +95,7 @@ function ScheduleTable({
                     }}
                   >
                     {readonly ? (
-                      <div className="text-xs text-gray-700 text-left space-y-1">
+                      <div className="text-xs text-white text-left space-y-1">
                         {users.map((u, idx) => (
                           <div key={idx}>{u}</div>
                         ))}
@@ -212,21 +212,21 @@ export default function ScheduleApp() {
 
   return (
     <div
-      className="min-h-screen flex flex-col py-8 px-4 text-gray-900"
-      style={
-        !currentUser
-          ? {
-              backgroundImage: `url(${process.env.PUBLIC_URL}/duncans-toyshop-bg.jpg)`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-            }
-          : {
-              backgroundImage: `url(${process.env.PUBLIC_URL}/duncans-toyshop-innerbg.jpg)`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-            }
-      }
+      className="min-h-screen flex flex-col py-8 px-4 text-gray-900 relative overflow-hidden"
     >
+      {currentUser ? (
+        <img
+          src={`${process.env.PUBLIC_URL}/duncans-toyshop-innerbg.jpg`}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover opacity-60 -z-10"
+        />
+      ) : (
+        <img
+          src={`${process.env.PUBLIC_URL}/duncans-toyshop-bg.jpg`}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover -z-10"
+        />
+      )}
 
         {!currentUser ? (
           <div className="flex flex-col flex-grow justify-end items-center w-full">
@@ -278,13 +278,13 @@ export default function ScheduleApp() {
 
             <div className="flex justify-center gap-2 mb-4">
               <button onClick={() => setDateOffset(dateOffset - 1)} className="focus:outline-none">
-                <img src="/left_arrow.png" alt="이전" className="w-12 h-12" />
+                <img src="/left_arrow.png" alt="이전" className="w-24 h-24" />
               </button>
               <button onClick={() => setDateOffset(1)} className="focus:outline-none">
-                <img src="/today.png" alt="오늘" className="w-12 h-12" />
+                <img src="/today.png" alt="오늘" className="w-24 h-24" />
               </button>
               <button onClick={() => setDateOffset(dateOffset + 1)} className="focus:outline-none">
-                <img src="/right_arrow.png" alt="다음" className="w-12 h-12" />
+                <img src="/right_arrow.png" alt="다음" className="w-24 h-24" />
               </button>
             </div>
 
@@ -319,7 +319,7 @@ export default function ScheduleApp() {
 
             <div className="mt-4 flex justify-center">
               <button onClick={handleSubmit} className="focus:outline-none">
-                <img src="/save.png" alt="저장" className="h-10" />
+                <img src="/save.png" alt="저장" className="h-20" />
               </button>
             </div>
 
@@ -349,8 +349,3 @@ export default function ScheduleApp() {
                 readonly={true}
               />
             )}
-          </>
-        )}
-    </div>
-  );
-}
