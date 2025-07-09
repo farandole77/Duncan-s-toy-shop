@@ -253,15 +253,15 @@ export default function ScheduleApp() {
             <div className="flex gap-2">
               <button
                 onClick={handleSignup}
-                className="w-1/2 py-2 rounded-lg bg-pink-500 text-white font-semibold shadow"
+                className="w-1/2 py-2 rounded-lg shadow"
               >
-                회원가입
+                <img src="/signup_btn.PNG" alt="회원가입" className="mx-auto" />
               </button>
               <button
                 onClick={handleLogin}
-                className="w-1/2 py-2 rounded-lg bg-blue-500 text-white font-semibold shadow"
+                className="w-1/2 py-2 rounded-lg shadow"
               >
-                로그인
+                <img src="/login_btn.PNG" alt="로그인" className="mx-auto" />
               </button>
             </div>
           </div>
