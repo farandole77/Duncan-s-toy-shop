@@ -226,42 +226,31 @@ export default function ScheduleApp() {
           : { backgroundColor: '#e5e7eb' }
       }
     >
-      <div
-        className={clsx(
-          'max-w-5xl mx-auto rounded-3xl p-6 shadow-xl backdrop-blur-md',
-          currentUser ? 'bg-white/80' : 'bg-white/60'
-        )}
-      >
-        <h1 className="text-3xl font-bold text-center mb-4">던컨의 장난감가게</h1>
 
         {!currentUser ? (
-          <div className="max-w-sm mx-auto mb-6">
-            <input
-              type="text"
-              placeholder="ID"
-              className="w-full border rounded-lg px-3 py-2 mb-2 bg-white/70 text-gray-900 placeholder-gray-500 shadow-inner focus:outline-none"
-              value={userId}
-              onChange={(e) => setUserId(e.target.value)}
-            />
-            <input
-              type="password"
-              placeholder="Password"
-              className="w-full border rounded-lg px-3 py-2 mb-2 bg-white/70 text-gray-900 placeholder-gray-500 shadow-inner focus:outline-none"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-            <div className="flex gap-2">
-              <button
-                onClick={handleSignup}
-                className="w-1/2 py-2 rounded-lg shadow"
-              >
-                <img src="/signup_btn.PNG" alt="회원가입" className="mx-auto" />
+          <div className="max-w-sm mx-auto relative min-h-40 mb-6">
+            <div className="mb-4">
+              <input
+                type="text"
+                placeholder="ID"
+                className="w-full border rounded-lg px-3 py-2 mb-2 bg-white/10 text-gray-900 placeholder-gray-500 shadow-inner focus:outline-none"
+                value={userId}
+                onChange={(e) => setUserId(e.target.value)}
+              />
+              <input
+                type="password"
+                placeholder="Password"
+                className="w-full border rounded-lg px-3 py-2 mb-2 bg-white/10 text-gray-900 placeholder-gray-500 shadow-inner focus:outline-none"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+            <div className="absolute bottom-0 left-0 right-0 flex justify-center gap-2">
+              <button onClick={handleLogin} className="w-1/2 py-2 rounded-lg shadow">
+                <img src="/login_btn.PNG" alt="로그인" className="mx-auto w-1/2" />
               </button>
-              <button
-                onClick={handleLogin}
-                className="w-1/2 py-2 rounded-lg shadow"
-              >
-                <img src="/login_btn.PNG" alt="로그인" className="mx-auto" />
+              <button onClick={handleSignup} className="w-1/2 py-2 rounded-lg shadow">
+                <img src="/signup_btn.PNG" alt="회원가입" className="mx-auto w-1/2" />
               </button>
             </div>
           </div>
@@ -391,7 +380,6 @@ export default function ScheduleApp() {
             )}
           </>
         )}
-      </div>
     </div>
   );
 }
