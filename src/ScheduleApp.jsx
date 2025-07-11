@@ -1,11 +1,3 @@
-import { useState, useEffect } from 'react';
-import clsx from 'clsx';
-import { initializeApp } from 'firebase/app';
-import {
-  getAuth,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
   onAuthStateChanged
 } from 'firebase/auth';
 import {
@@ -31,14 +23,14 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-function getDateLabel(offset = 1) {
+function getDateLabel(offset = 0) {
   const d = new Date();
   d.setDate(d.getDate() + offset);
   return `${d.getMonth() + 1}.${d.getDate()} (${['일','월','화','수','목','금','토'][d.getDay()]})`;
 }
 
 // Firestore 키에 안전하게 사용할 날짜 포맷
-function getDateKey(offset = 1) {
+function getDateKey(offset = 0) {
   const d = new Date();
   d.setDate(d.getDate() + offset);
   const m = `${d.getMonth() + 1}`.padStart(2, '0');
@@ -52,6 +44,7 @@ function ScheduleTable({
   toggleSlot,
   displayDate,
   dateKey = displayDate,
+  offset = 0,
   times,
   stages,
   allSchedules,
@@ -88,7 +81,7 @@ function ScheduleTable({
                     )}
                     onClick={() => {
                       if (!readonly && canEdit) {
-                        toggleSlot(time, stage);
+                        toggleSlot(time, stage, offset);
                       } else if (!readonly && !canEdit) {
                         alert('선택은 오늘까지 가능합니다.');
                       }
@@ -120,20 +113,20 @@ export default function ScheduleApp() {
   const [currentUser, setCurrentUser] = useState(null);
   const [selected, setSelected] = useState({});
   const [allSchedules, setAllSchedules] = useState({});
-  const [dateOffset, setDateOffset] = useState(1);
+  const [weekOffset, setWeekOffset] = useState(0);
   const [page, setPage] = useState('abyss');
 
   const times = ['오전', '오후', '저녁'];
   const abyssStages = ['입문~매어', '지옥1', '지옥2', '지옥3'];
   const raidStages = ['글기(일반)', '글기(어려움)', '화이트서큐'];
-  const dateLabel = getDateLabel(dateOffset);
-  const dateKey = getDateKey(dateOffset);
 
   const now = new Date();
-  const targetDate = new Date();
-  targetDate.setDate(targetDate.getDate() + dateOffset);
-  targetDate.setHours(23, 59, 59, 999);
-  const canEdit = now <= targetDate;
+  const canEditForOffset = (offset) => {
+    const targetDate = new Date();
+    targetDate.setDate(targetDate.getDate() + offset);
+    targetDate.setHours(23, 59, 59, 999);
+    return now <= targetDate;
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -149,10 +142,10 @@ export default function ScheduleApp() {
     });
     loadAllSchedules();
     return () => unsubscribe();
-  }, [dateOffset]);
+  }, [weekOffset]);
 
-  const toggleSlot = (time, stage) => {
-    const key = `${getDateKey(dateOffset)}-${time}-${stage}`;
+  const toggleSlot = (time, stage, offset = 0) => {
+    const key = `${getDateKey(offset)}-${time}-${stage}`;
     setSelected((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
@@ -178,15 +171,7 @@ export default function ScheduleApp() {
   };
 
   const handleSubmit = async () => {
-    if (!currentUser) return;
-    try {
-      await setDoc(doc(db, 'schedules', currentUser.uid), {
-        id: userId,
-        data: selected,
-      });
-      alert('저장되었습니다.');
-      window.location.reload();
-    } catch (error) {
+@@ -190,167 +191,218 @@ export default function ScheduleApp() {
       alert('저장 실패: ' + error.message);
     }
   };
@@ -212,21 +197,8 @@ export default function ScheduleApp() {
 
   return (
     <div
-      className="min-h-screen flex flex-col py-8 px-4 text-gray-900 relative overflow-hidden"
+      className="min-h-screen flex flex-col py-8 px-4 text-gray-900 relative overflow-hidden bg-yellow-50"
     >
-      {currentUser ? (
-        <img
-          src={`${process.env.PUBLIC_URL}/duncans-toyshop-innerbg.jpg`}
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover opacity-60 -z-10"
-        />
-      ) : (
-        <img
-          src={`${process.env.PUBLIC_URL}/duncans-toyshop-bg.jpg`}
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover -z-10"
-        />
-      )}
 
         {!currentUser ? (
           <div className="flex flex-col flex-grow justify-end items-center w-full">
@@ -247,11 +219,11 @@ export default function ScheduleApp() {
               />
             </div>
             <div className="flex justify-center gap-2 w-full max-w-sm mb-2">
-              <button onClick={handleSignup} className="w-1/2 py-2 rounded-lg shadow">
-                <img src="/signup_btn.PNG" alt="회원가입" className="mx-auto w-1/2" />
+              <button onClick={handleSignup} className="w-1/2 py-2 rounded-lg shadow bg-sky-500 text-white">
+                회원가입
               </button>
-              <button onClick={handleLogin} className="w-1/2 py-2 rounded-lg shadow">
-                <img src="/login_btn.PNG" alt="로그인" className="mx-auto w-1/2" />
+              <button onClick={handleLogin} className="w-1/2 py-2 rounded-lg shadow bg-sky-500 text-white">
+                로그인
               </button>
             </div>
           </div>
@@ -268,86 +240,150 @@ export default function ScheduleApp() {
             </div>
 
             <div className="flex justify-center gap-4 mb-4">
-              <button onClick={() => setPage('abyss')} className="focus:outline-none">
-                <img src="/abyss.png" alt="어비스" className="w-24" />
+              <button
+                onClick={() => setPage('abyss')}
+                className={clsx(
+                  'px-4 py-2 rounded-lg',
+                  page === 'abyss'
+                    ? 'bg-white text-sky-500 border border-sky-500'
+                    : 'bg-sky-500 text-white'
+                )}
+              >
+                어비스
               </button>
-              <button onClick={() => setPage('raid')} className="focus:outline-none">
-                <img src="/raid.png" alt="레이드" className="w-24" />
+              <button
+                onClick={() => setPage('raid')}
+                className={clsx(
+                  'px-4 py-2 rounded-lg',
+                  page === 'raid'
+                    ? 'bg-white text-sky-500 border border-sky-500'
+                    : 'bg-sky-500 text-white'
+                )}
+              >
+                레이드
               </button>
             </div>
 
             <div className="flex justify-center gap-2 mb-4">
-              <button onClick={() => setDateOffset(dateOffset - 1)} className="focus:outline-none">
-                <img src="/left_arrow.png" alt="이전" className="w-24 h-24" />
+              <button
+                onClick={() => setWeekOffset(weekOffset - 7)}
+                className="px-4 py-2 rounded-lg bg-sky-500 text-white"
+              >
+                이전주
               </button>
-              <button onClick={() => setDateOffset(1)} className="focus:outline-none">
-                <img src="/today.png" alt="오늘" className="w-24 h-24" />
+              <button
+                onClick={() => setWeekOffset(0)}
+                className="px-4 py-2 rounded-lg bg-sky-500 text-white"
+              >
+                이번주
               </button>
-              <button onClick={() => setDateOffset(dateOffset + 1)} className="focus:outline-none">
-                <img src="/right_arrow.png" alt="다음" className="w-24 h-24" />
+              <button
+                onClick={() => setWeekOffset(weekOffset + 7)}
+                className="px-4 py-2 rounded-lg bg-sky-500 text-white"
+              >
+                다음주
               </button>
             </div>
 
             {page === 'abyss' && (
-              <ScheduleTable
-                title="어비스 일정 등록"
-                selected={selected}
-                toggleSlot={toggleSlot}
-                displayDate={dateLabel}
-                dateKey={dateKey}
-                times={times}
-                stages={abyssStages}
-                allSchedules={{}}
-                readonly={false}
-                canEdit={canEdit}
-              />
+              <div className="grid gap-4">
+                {Array.from({ length: 7 }).map((_, idx) => {
+                  const offset = weekOffset + idx;
+                  return (
+                    <ScheduleTable
+                      key={offset}
+                      title="어비스 일정 등록"
+                      selected={selected}
+                      toggleSlot={(t, s) => toggleSlot(t, s, offset)}
+                      displayDate={getDateLabel(offset)}
+                      dateKey={getDateKey(offset)}
+                      offset={offset}
+                      times={times}
+                      stages={abyssStages}
+                      allSchedules={{}}
+                      readonly={false}
+                      canEdit={canEditForOffset(offset)}
+                    />
+                  );
+                })}
+              </div>
             )}
             {page === 'raid' && (
-              <ScheduleTable
-                title="레이드 일정 등록"
-                selected={selected}
-                toggleSlot={toggleSlot}
-                displayDate={dateLabel}
-                dateKey={dateKey}
-                times={times}
-                stages={raidStages}
-                allSchedules={{}}
-                readonly={false}
-                canEdit={canEdit}
-              />
+              <div className="grid gap-4">
+                {Array.from({ length: 7 }).map((_, idx) => {
+                  const offset = weekOffset + idx;
+                  return (
+                    <ScheduleTable
+                      key={offset}
+                      title="레이드 일정 등록"
+                      selected={selected}
+                      toggleSlot={(t, s) => toggleSlot(t, s, offset)}
+                      displayDate={getDateLabel(offset)}
+                      dateKey={getDateKey(offset)}
+                      offset={offset}
+                      times={times}
+                      stages={raidStages}
+                      allSchedules={{}}
+                      readonly={false}
+                      canEdit={canEditForOffset(offset)}
+                    />
+                  );
+                })}
+              </div>
             )}
 
             <div className="mt-4 flex justify-center">
-              <button onClick={handleSubmit} className="focus:outline-none">
-                <img src="/save.png" alt="저장" className="h-20" />
+              <button
+                onClick={handleSubmit}
+                className="px-6 py-2 rounded-lg bg-sky-500 text-white"
+              >
+                저장
               </button>
             </div>
 
             {page === 'abyss' && (
-              <ScheduleTable
-                title="오늘의 어비스 플레이어"
-                selected={{}}
-                toggleSlot={() => {}}
-                displayDate={dateLabel}
-                dateKey={dateKey}
-                times={times}
-                stages={abyssStages}
-                allSchedules={allSchedules}
-                readonly={true}
-              />
+              <div className="grid gap-4 mt-6">
+                {Array.from({ length: 7 }).map((_, idx) => {
+                  const offset = weekOffset + idx;
+                  return (
+                    <ScheduleTable
+                      key={"view-abyss-" + offset}
+                      title="오늘의 어비스 플레이어"
+                      selected={{}}
+                      toggleSlot={() => {}}
+                      displayDate={getDateLabel(offset)}
+                      dateKey={getDateKey(offset)}
+                      offset={offset}
+                      times={times}
+                      stages={abyssStages}
+                      allSchedules={allSchedules}
+                      readonly={true}
+                    />
+                  );
+                })}
+              </div>
             )}
             {page === 'raid' && (
-              <ScheduleTable
-                title="오늘의 레이드 플레이어"
-                selected={{}}
-                toggleSlot={() => {}}
-                displayDate={dateLabel}
-                dateKey={dateKey}
-                times={times}
-                stages={raidStages}
-                allSchedules={allSchedules}
-                readonly={true}
-              />
+              <div className="grid gap-4 mt-6">
+                {Array.from({ length: 7 }).map((_, idx) => {
+                  const offset = weekOffset + idx;
+                  return (
+                    <ScheduleTable
+                      key={"view-raid-" + offset}
+                      title="오늘의 레이드 플레이어"
+                      selected={{}}
+                      toggleSlot={() => {}}
+                      displayDate={getDateLabel(offset)}
+                      dateKey={getDateKey(offset)}
+                      offset={offset}
+                      times={times}
+                      stages={raidStages}
+                      allSchedules={allSchedules}
+                      readonly={true}
+                    />
+                  );
+                })}
+              </div>
             )}
           </>
         )}
